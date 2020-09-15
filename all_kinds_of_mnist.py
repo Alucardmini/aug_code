@@ -23,7 +23,8 @@ class LRMNIST(object):
         self.y = tf.placeholder(tf.float32, shape=[None, 10], name="y")
         w = tf.Variable(tf.random_uniform([28*28, 10], minval=0.0, maxval=0.99), name="w")
         b = tf.Variable(tf.zeros([10]), name="b")
-        y_pred = tf.nn.softmax(tf.add(tf.matmul(self.x, w), b))
+        # y_pred = tf.nn.softmax(tf.add(tf.matmul(self.x, w), b))
+        y_pred = tf.nn.softmax(tf.nn.xw_plus_b(self.x, w, b))
 
         self.loss = -tf.reduce_mean(tf.reduce_sum(self.y * tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)), reduction_indices=1))
         self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
@@ -73,6 +74,87 @@ class CNNMNIST(object):
                                         feed_dict={self.x: test_x, self.y: test_y})
                 print(self.__class__.__name__, "epoch", ep, "loss:", loss, "acc:", acc)
 
+
+class Self_Attention_Mnist(object):
+
+    def __init__(self, learning_rate=0.1):
+        super(Self_Attention_Mnist, self).__init__()
+        self.learning_rate = learning_rate
+        self.build_graph()
+
+    def build_graph(self):
+
+        self.x = tf.placeholder(tf.float32, [None, 28*28], name="x")
+        self.y = tf.placeholder(tf.float32, [None, 10], name="y")
+
+        image = tf.reshape(self.x, [-1, 28, 28])
+        Q, KT, V = image, tf.transpose(image, perm=[0, 2, 1]), image
+
+        att = tf.matmul(tf.nn.softmax(tf.matmul(Q, KT) / 14), V)
+        fc = tf.reshape(att, [-1, 28*28])
+        w = tf.Variable(tf.random_uniform([28 * 28, 10], minval=0.0, maxval=0.99), name="w")
+        b = tf.Variable(tf.zeros([10]), name="b")
+
+        # y_pred = tf.nn.softmax(tf.add(tf.matmul(self.x, w), b))
+
+        y_pred = tf.nn.softmax(tf.add(tf.matmul(fc, w), b))
+
+        self.loss = -tf.reduce_sum(self.y * tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)))
+        self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+
+        correct_prediction = tf.equal(tf.argmax(y_pred, 1), tf.argmax(self.y, 1))
+        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+
+    def train(self, sess: tf.Session, train_x, train_y, test_x, test_y, epoch=100, mod=10):
+        for ep in range(epoch):
+            sess.run(self.accuracy, feed_dict={self.x: train_x, self.y: train_y})
+            if ep % mod == 0:
+                loss, acc, _ = sess.run([self.loss, self.accuracy, self.train_op],
+                                        feed_dict={self.x: test_x, self.y: test_y})
+                print(self.__class__.__name__, "epoch", ep, "loss:", loss, "acc:", acc)
+
+
+class RNNMNIST(object):
+
+    def __init__(self, learning_rate=0.1, time_step=28, units=28):
+        super(RNNMNIST, self).__init__()
+        self.learning_rate = learning_rate
+        self.time_step = time_step
+        self.units = units
+        self.build_graph()
+
+    def build_graph(self):
+
+        self.x = tf.placeholder(tf.float32, [None, 28 * 28], name="x")
+        self.y = tf.placeholder(tf.float32, [None, 10], name="y")
+
+        image = tf.reshape(self.x, [-1, self.time_step, self.units])
+
+        inputs = tf.unstack(image, self.time_step, 1)
+
+        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(self.units)
+        outputs, _ = tf.nn.static_rnn(lstm_cell, inputs, dtype="float32")
+
+        w = tf.Variable(tf.truncated_normal([self.units, 10]))
+        b = tf.Variable(tf.truncated_normal([10]))
+        y_pred = tf.nn.softmax(tf.matmul(outputs[-1], w) + b)
+
+        self.loss = -tf.reduce_sum(self.y * tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)))
+        self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+
+        correct_prediction = tf.equal(tf.argmax(y_pred, 1), tf.argmax(self.y, 1))
+        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+
+    def train(self, sess: tf.Session, train_x, train_y, test_x, test_y, epoch=100, mod=10):
+        for ep in range(epoch):
+            sess.run(self.accuracy, feed_dict={self.x: train_x, self.y: train_y})
+            if ep % mod == 0:
+                loss, acc, _ = sess.run([self.loss, self.accuracy, self.train_op],
+                                        feed_dict={self.x: test_x, self.y: test_y})
+                print(self.__class__.__name__, "epoch", ep, "loss:", loss, "acc:", acc)
+
+
+
 if __name__ == '__main__':
     # (x_train, y_train), (x_test, y_test) = mnist.load_data()
     # print(x_train.shape, y_train.shape)
@@ -83,7 +165,7 @@ if __name__ == '__main__':
     #
     # print(x_train.shape, y_train.shape)
     #
-    # # model = LRMNIST(0.1)
+    # model = LRMNIST(0.1)
     # model = CNNMNIST(1e-4)
     # init_global = tf.global_variables_initializer()
     # with tf.Session() as sess:
@@ -92,14 +174,17 @@ if __name__ == '__main__':
 
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 
-    model = CNNMNIST(0.0015)
-    # model = LRMNIST(0.1)
+    # model = CNNMNIST(0.0015)
+    model = LRMNIST(0.1)
+    # model = Self_Attention_Mnist(0.025)
+    # model = RNNMNIST(0.0187)
+
     init_global = tf.global_variables_initializer()
     batch = mnist.train.next_batch(50)
 
     with tf.Session() as sess:
         sess.run(init_global)
-        model.train(sess, batch[0], batch[1], batch[0], batch[1], epoch=2000, mod=100)
+        model.train(sess, batch[0], batch[1], batch[0], batch[1], epoch=20000, mod=100)
 
 
 
