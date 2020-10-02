@@ -26,7 +26,10 @@ class LRMNIST(object):
         # y_pred = tf.nn.softmax(tf.add(tf.matmul(self.x, w), b))
         y_pred = tf.nn.softmax(tf.nn.xw_plus_b(self.x, w, b))
 
-        self.loss = -tf.reduce_mean(tf.reduce_sum(self.y * tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)), reduction_indices=1))
+        # self.loss = -tf.reduce_mean(tf.reduce_sum(self.y * tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)), reduction_indices=1))
+
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)) ))
+
         self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
         correct_prediction = tf.equal(tf.argmax(y_pred, 1), tf.argmax(self.y, 1))
