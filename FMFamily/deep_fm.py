@@ -192,8 +192,8 @@ if __name__ == "__main__":
     gpu_config.gpu_options.allow_growth = True
 
     data = load_data()
-    args.feat_size = data['feat_dim']
-    args.field_size = len(data['xi'][0])
+    args.feat_size = data['feat_dim']  # feature size
+    args.field_size = len(data['xi'][0])  # 域名
     args.is_train = True
 
     with tf.Session(config=gpu_config) as sess:

@@ -33,7 +33,7 @@ def load_data():
         col_name = col_data.name
         value_length = len(set(col_data))
 
-        if value_length > 10:
+        if value_length > 10:  # 如果个数超过10 搞成1个连续特征
             col_data = (col_data - col_data.mean()) / col_data.std()
             co_feature = pd.concat([co_feature, col_data], axis=1)
 
@@ -41,7 +41,7 @@ def load_data():
             cnt += 1
             co_col.append(col_name)
 
-        else:
+        else:  # 如果个数小于等于10  搞成多个离散特征
             us = col_data.unique()
             feat_dict[col_name] = dict(zip(us, range(cnt, len(us) + cnt)))
             ca_feature = pd.concat([ca_feature, col_data], axis=1)
@@ -66,7 +66,8 @@ def load_data():
 
 
 if __name__ == '__main__':
-    pass
+    data = load_data()
+
 
 
 

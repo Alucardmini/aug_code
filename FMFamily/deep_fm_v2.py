@@ -12,7 +12,7 @@ class ModelArgs(object):
         self.feature_embed_size = 256
         self.field_size = 30
 
-        self.learn_rate = 0.05
+        self.learn_rate = 0.08
         self.epochs = 3
         self.batch_size = 64
         self.l2_reg_rate = 0.01
