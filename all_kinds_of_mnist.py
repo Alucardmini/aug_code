@@ -7,6 +7,7 @@ import tensorflow as tf
 from keras.utils import np_utils
 from keras.datasets import mnist
 import numpy as np
+import os
 
 import input_data
 
@@ -24,7 +25,14 @@ class LRMNIST(object):
         w = tf.Variable(tf.random_uniform([28*28, 10], minval=0.0, maxval=0.99), name="w")
         b = tf.Variable(tf.zeros([10]), name="b")
         # y_pred = tf.nn.softmax(tf.add(tf.matmul(self.x, w), b))
-        y_pred = tf.nn.softmax(tf.nn.xw_plus_b(self.x, w, b))
+
+        out = tf.nn.xw_plus_b(self.x, w, b)
+
+        mean, var = tf.nn.moments(out, axes=[0])
+        scale = tf.Variable(tf.ones([10]))
+        shift = tf.Variable(tf.zeros([10]))  # scale 和 shift 又整理了输出
+        out = tf.nn.batch_normalization(out, mean=mean, variance=var,  offset=shift, scale=scale, variance_epsilon=0.001)
+        y_pred = tf.nn.softmax(out)
 
         # self.loss = -tf.reduce_mean(tf.reduce_sum(self.y * tf.log(tf.clip_by_value(y_pred, 1e-10, 1.0)), reduction_indices=1))
 
@@ -42,6 +50,12 @@ class LRMNIST(object):
             if ep % mod == 0:
                 loss, acc, _ = sess.run([self.loss, self.accuracy, self.train_op], feed_dict={self.x: test_x, self.y: test_y})
                 print(self.__class__.__name__, "epoch", ep, "loss:", loss, "acc:", acc)
+
+    def save(self, path, sess, global_step=1):
+        if not os.path.exists(path):
+            os.mkdir(path)
+        saver = tf.train.Saver()
+        saver.save(sess=sess, save_path=path + "/model.ckpt", global_step=global_step)
 
 
 class CNNMNIST(object):
@@ -67,6 +81,7 @@ class CNNMNIST(object):
         self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
         correct_prediction = tf.equal(tf.argmax(y_pred, 1), tf.argmax(self.y, 1))
+        correct_prediction = tf.equal(tf.arg_max(y_pred, 1), tf.arg_max(self.y, 1))
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
     def train(self, sess: tf.Session, train_x, train_y, test_x, test_y, epoch=100, mod=10):
@@ -115,6 +130,8 @@ class Self_Attention_Mnist(object):
                 loss, acc, _ = sess.run([self.loss, self.accuracy, self.train_op],
                                         feed_dict={self.x: test_x, self.y: test_y})
                 print(self.__class__.__name__, "epoch", ep, "loss:", loss, "acc:", acc)
+
+
 
 
 class RNNMNIST(object):
@@ -187,7 +204,8 @@ if __name__ == '__main__':
 
     with tf.Session() as sess:
         sess.run(init_global)
-        model.train(sess, batch[0], batch[1], batch[0], batch[1], epoch=20000, mod=100)
+        model.train(sess, batch[0], batch[1], batch[0], batch[1], epoch=200, mod=100)
+        model.save("ckpt/lr", sess, 20)
 
 
 

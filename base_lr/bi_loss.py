@@ -4,10 +4,21 @@
 # @date: '2020/10/2 6:16 PM'
 
 
-class ClassName(object):
-    def __init__(self):
-        super(ClassName, self).__init__
+import tensorflow as tf
 
+x = tf.get_variable('x', initializer=42.)
+y = tf.square(x)
 
-if __name__ == "__main__":
-    pass
+optimizer = tf.train.GradientDescentOptimizer(0.1)
+
+train_min = optimizer.minimize(y)
+train_max = optimizer.minimize(-y)
+
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+
+    for i in range(100):
+        cost, _ = sess.run([y, train_min])
+        print("train_min ==>%s" % cost)
+        # cost, _ = sess.run([y, train_max])
+        # print("train_max ==>%s" % cost)
