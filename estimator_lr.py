@@ -1,8 +1,7 @@
 # -*- coding:utf-8 -*-
 # @version: 1.0
 # @author: wuxikun
-# @date: '2020/10/17 9:40 PM'
-
+# @date: '2020/10/18 10:12 AM'
 
 import tensorflow as tf
 import numpy as np
@@ -11,8 +10,10 @@ import input_data
 tf.logging.set_verbosity(tf.logging.INFO)
 
 
-def lenet(x, is_training):
+def convNet(x, is_training):
+
     x = tf.reshape(x, shape=[-1, 28, 28, 1])
+
     conv1 = tf.layers.conv2d(x, 32, 5, activation=tf.nn.relu)
     conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
 
@@ -26,18 +27,17 @@ def lenet(x, is_training):
 
 
 def model_fn(features, labels, mode, params):
-    predict = lenet(features["image"], mode == tf.estimator.ModeKeys.TRAIN)
+
+    predict = convNet(features["image"], mode == tf.estimator.ModeKeys.TRAIN)
     if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions={"result": tf.argmax(predict, 1)})
+        return tf.estimator.EstimatorSpec(mode=mode, predictions={"result": tf.arg_max(predict, 1)})
 
     loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=predict, labels=labels))
 
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=params["learning_rate"])
     train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
     eval_metric_ops = {"accuracy": tf.metrics.accuracy(tf.argmax(predict, 1), labels)}
-
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op, eval_metric_ops=eval_metric_ops)
-
 
 mnist = input_data.read_data_sets('MNIST_data', one_hot=False)
 model_params = {"learning_rate": 0.01}
@@ -50,4 +50,30 @@ train_input_fn = tf.estimator.inputs.numpy_input_fn(x={"image": mnist.train.imag
 
 estimator.train(input_fn=train_input_fn, steps=30000)
 estimator.export_saved_model("./")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
