@@ -3,11 +3,7 @@
 # @author: wuxikun
 # @date: '2020/11/14 10:48 PM'
 
+import tensorflow as tf
 
-class ClassName(object):
-    def __init__(self):
-        super(ClassName, self).__init__
-
-
-if __name__ == "__main__":
-    pass
+path = "./tf_record"
+writer = tf.python_io.TFRecordWriter(path)

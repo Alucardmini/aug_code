@@ -202,10 +202,21 @@ if __name__ == '__main__':
     init_global = tf.global_variables_initializer()
     batch = mnist.train.next_batch(50)
 
+    # with tf.Session() as sess:
+    #     sess.run(init_global)
+    #     model.train(sess, batch[0], batch[1], batch[0], batch[1], epoch=200, mod=100)
+    #     # model.save("ckpt/lr", sess, 20)
+    #
+    #     with tf.gfile.FastGFile("ckpt/pb/" + 'model.pb', mode='wb') as f:
+    #         f.write(sess.graph_def.SerializeToString())
+
     with tf.Session() as sess:
-        sess.run(init_global)
-        model.train(sess, batch[0], batch[1], batch[0], batch[1], epoch=200, mod=100)
-        model.save("ckpt/lr", sess, 20)
+        graph = tf.train.import_meta_graph('./ckpt/lr/model.ckpt-20.meta')
+        graph.restore(sess, tf.train.latest_checkpoint('./ckpt/lr'))
+
+
+
+
 
 
 
