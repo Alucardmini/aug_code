@@ -28,14 +28,8 @@ if __name__ == "__main__":
 
     x_data = np.random.randint(0, 100, 100).astype(np.float32)
     y_data = 2*x_data + 0.05
-    # x_data = np.reshape(x_data, [-1, 1])
-    # y_data = np.reshape(y_data, [-1, 1])
-    print(x_data.shape)
-    print(y_data.shape)
-
     init = tf.global_variables_initializer()
     x, y, loss_op, train_op = lr_model()
-
     with tf.Session() as sess:
         sess.run(init)
         loss, _ = sess.run([loss_op, train_op], feed_dict={x: x_data, y: y_data})
