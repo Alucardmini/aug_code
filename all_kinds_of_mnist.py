@@ -214,7 +214,7 @@ if __name__ == '__main__':
         graph = tf.train.import_meta_graph('./ckpt/lr/model.ckpt-20.meta')
         graph.restore(sess, tf.train.latest_checkpoint('./ckpt/lr'))
 
-
+    tf.saved_model.save
 
 
 

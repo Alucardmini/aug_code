@@ -46,17 +46,27 @@ def model_fn(features, labels, mode, params):
     return tf.estimator.EstimatorSpec(mode=mode, train_op=train_op, eval_metric_ops=eval_metric_ops, loss=loss)
 
 
-# if __name__ == '__main__':
-#     mnist = input_data.read_data_sets('MNIST_data', one_hot=False)
-#     model_params = {"lr_rate": 0.01}
-#     estimator = tf.estimator.Estimator(model_fn=model_fn, params=model_params, model_dir="model/cnn")
-#     train_input_fn = tf.estimator.inputs.numpy_input_fn(x={"image": mnist.train.images},
-#                                                         y=mnist.train.labels.astype(np.int32),
-#                                                         num_epochs=2,
-#                                                         batch_size=128,
-#                                                         shuffle=True)
-#
-#     estimator.train(input_fn=train_input_fn, steps=30000)
+if __name__ == '__main__':
+    mnist = input_data.read_data_sets('MNIST_data', one_hot=False)
+    model_params = {"lr_rate": 0.01}
+    estimator = tf.estimator.Estimator(model_fn=model_fn, params=model_params, model_dir="model/cnn")
+    train_input_fn = tf.estimator.inputs.numpy_input_fn(x={"image": mnist.train.images},
+                                                        y=mnist.train.labels.astype(np.int32),
+                                                        num_epochs=2,
+                                                        batch_size=128,
+                                                        shuffle=True)
+
+    estimator.train(input_fn=train_input_fn, steps=30000)
+
+
+    def serving_input_fn():
+        inputs = {'image': tf.placeholder(tf.float32, [None, 28, 28])}
+        return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+
+
+    estimator.export_savedmodel(export_dir_base="DNN/saved_model", serving_input_receiver_fn=serving_input_fn)
+
+
 
 
 
